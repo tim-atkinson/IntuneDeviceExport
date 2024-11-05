@@ -1,5 +1,7 @@
 # Export-IntuneManagedDevices
 
+![PSScriptAnalyzer](https://github.com/tim-atkinson/IntuneDeviceExport/actions/workflows/ci-workflow-psscriptanalyzer.yml/badge.svg)
+
 ## Overview
 This script connects to Microsoft Intune using the Microsoft Graph API to retrieve managed device information and export it in both JSON and CSV formats. The script is designed for IT professionals managing Intune environments, providing an easy way to automate device data retrieval.
 

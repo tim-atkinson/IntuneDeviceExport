@@ -5,20 +5,25 @@
 .DESCRIPTION
     This PowerShell script follows best practice standards for connecting to Microsoft Intune via the Microsoft Graph API. 
     It retrieves managed device information and exports it in both JSON and CSV formats for further processing and analysis. 
-    The script supports both interactive user login and service principal (client credentials) authentication for flexibility. 
+    The script supports both interactive user login and service principal (client secret credentials) authentication for flexibility.
+    Client Secret credentials are stored in a secure file for enhanced security.  
     Logging is implemented for transparency and troubleshooting.
 
-.PARAMETER ClientId
-    The Client ID of the Azure AD application used for authentication.
-
 .PARAMETER TenantId
-    The Tenant ID of the Azure AD application.
+    The Tenant ID (directory ID) of the Azure AD application.
 
-.PARAMETER ClientSecret
-    The Client Secret of the Azure AD application used for authentication.
+.PARAMETER Path
+    The file path to the secure credential file containing the client secret credentials.
+
+    # To create the credential file, execute:
+    $ClientSecretCredential = Get-Credential -Credential "<YourTenantId>"
+`   Enter <YourSecretId>
+    $ClientSecretCredential | Export-Clixml -Path "<PathToCredentialFile>"
+
+    NOTE: The credential file is encrypted and can only be used by the same user on the same machine.
 
 .PARAMETER UseInteractiveLogin
-    A switch parameter to use interactive login for authentication instead of client credentials.
+    A switch parameter to use interactive login for authentication instead of providing client credentials.
 
 .PARAMETER LogPath
     The file path where logs should be written. Default is "$PSScriptRoot\IntuneManagedDevices.log".
@@ -27,19 +32,25 @@
     Directory where output files (JSON and CSV) should be saved. Default is the script's root directory.
 
 .EXAMPLE
-    .\Export-IntuneManagedDevices.ps1 -ClientId "<YourClientId>" -TenantId "<YourTenantId>" -ClientSecret "<YourClientSecret>"
-    Connects to Microsoft Graph using client credentials and exports the managed devices to JSON and CSV.
+    .\Export-IntuneManagedDevices.ps1 -TenantId "<YourTenantId>" -Path "<PathToCredentialFile>"
+    Connects to Microsoft Graph using client credentials from a secure file and exports the managed devices to JSON and CSV.
 
 .EXAMPLE
     .\Export-IntuneManagedDevices.ps1 -UseInteractiveLogin
     Connects to Microsoft Graph using interactive login and exports the managed devices to JSON and CSV.
 #>
 
+[CmdletBinding(DefaultParameterSetName = 'ClientCredentials')]
 param (
-    [string]$ClientId,
+    [Parameter(ParameterSetName = 'ClientCredentials', Mandatory = $true)]
     [string]$TenantId,
-    [string]$ClientSecret,
+
+    [Parameter(ParameterSetName = 'ClientCredentials', Mandatory = $true)]
+    [string]$Path,
+
+    [Parameter(ParameterSetName = 'Interactive', Mandatory = $true)]
     [switch]$UseInteractiveLogin,
+
     [string]$LogPath = "$PSScriptRoot\IntuneManagedDevices.log",
     [string]$OutputDirectory = $PSScriptRoot
 )
@@ -88,27 +99,35 @@ function Connect-MSGraph {
             Write-Log -Message "Attempting interactive login..."
             Connect-MgGraph -Scopes "DeviceManagementManagedDevices.Read.All" -NoWelcome
         }
-        # Use client credentials if ClientId, TenantId, and ClientSecret are provided
-        elseif ($ClientId -and $TenantId -and $ClientSecret) {
-            Write-Log -Message "Attempting client credentials authentication with Client ID: $ClientId"
-            
-            # Convert the Client Secret to a Secure String for secure handling
-            $SecureClientSecret = ConvertTo-SecureString -String $ClientSecret -AsPlainText -Force
-            # Create a PSCredential Object Using the Client ID and Secure Client Secret
-            $ClientSecretCredential = New-Object -TypeName System.Management.Automation.PSCredential -ArgumentList $ClientId, $SecureClientSecret
-            # Connect to Microsoft Graph Using the Tenant ID and Client Secret Credential
+        # Use secure file credentials if TenantId and Path are provided
+        elseif ($TenantId -and $Path) {
+            Write-Log -Message "Attempting client secret credentials authentication using file at: $Path"
+
+            # Import the credential from the secure file
+            if (-Not (Test-Path -Path $Path)) {
+                Write-Log -Message "Credential file not found at path: $Path" -Level "ERROR"
+                throw "Credential file not found at path: $Path"
+            }
+
+            try {
+                $ClientSecretCredential = Import-Clixml -Path $Path
+            } catch {
+                Write-Log -Message "Failed to import credential: $($_.Exception.Message)" -Level "ERROR"
+                throw $_
+            }
+
+            # Connect to Microsoft Graph using the Tenant ID and imported credentials
             Connect-MgGraph -TenantId $TenantId -ClientSecretCredential $ClientSecretCredential -NoWelcome
         }
         # Throw an error if no valid authentication method is provided
         else {
-            throw "No valid authentication method provided. Please use -UseInteractiveLogin or provide ClientId, TenantId, and ClientSecret."
+            throw "No valid authentication method provided. Please use -UseInteractiveLogin or provide TenantId and Path."
         }
         Write-Log -Message "Successfully authenticated with Microsoft Graph. New session initiated."
     }
     catch {
         # Log any authentication errors and rethrow the exception
         Write-Log -Message "Authentication failed: $($_.Exception.Message)" -Level "ERROR"
-        Write-Log -Message "Full Exception Details: $($_ | Out-String)" -Level "ERROR"
         throw $_
     }
 }
@@ -175,6 +194,17 @@ function Export-DevicesToCsv {
 try {
     # Start a new log session to track the beginning of script execution
     Start-LogSession
+
+    # Verify that the output directory exists; create it if it doesn't
+    if (-Not (Test-Path -Path $OutputDirectory)) {
+        try {
+            New-Item -Path $OutputDirectory -ItemType Directory -Force | Out-Null
+            Write-Log -Message "Created output directory at: $OutputDirectory"
+        } catch {
+            Write-Log -Message "Failed to create output directory at: $OutputDirectory - $($_.Exception.Message)" -Level "ERROR"
+            throw $_
+        }
+    }
 
     # Connect to Microsoft Graph
     Connect-MSGraph

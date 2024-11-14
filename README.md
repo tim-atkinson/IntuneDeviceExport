@@ -36,7 +36,7 @@ This script connects to Microsoft Intune using the Microsoft Graph API to retrie
 
 - **Create the credential file, execute**:
   ```powershell
-    $ClientSecretCredential = Get-Credential -Credential "<YourTenantId>"
+    $ClientSecretCredential = Get-Credential -Credential "<YourClientId>"
     Enter <YourSecretId>
     $ClientSecretCredential | Export-Clixml -Path "<PathToCredentialFile>"
   ```

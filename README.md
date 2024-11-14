@@ -41,7 +41,7 @@ This script connects to Microsoft Intune using the Microsoft Graph API to retrie
     $ClientSecretCredential | Export-Clixml -Path "<PathToCredentialFile>"
   ```
 > [!WARNING]
-> NOTE: The Export-Clixml cmdlet encrypts credential objects by using the Windows Data Protection API. The encryption ensures that only your user account on only that computer can decrypt the contents of the credential object. The exported CLIXML file can't be used on a different computer or by a different user.
+> The Export-Clixml cmdlet encrypts credential objects by using the Windows Data Protection API. The encryption ensures that only your user account on only that computer can decrypt the contents of the credential object. The exported CLIXML file can't be used on a different computer or by a different user.
 
 ## Parameters
 - `-ClientId`: The Client ID of the Azure AD application used for authentication.

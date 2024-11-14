@@ -44,9 +44,8 @@ This script connects to Microsoft Intune using the Microsoft Graph API to retrie
 > The Export-Clixml cmdlet encrypts credential objects by using the Windows Data Protection API. The encryption ensures that only your user account on only that computer can decrypt the contents of the credential object. The exported CLIXML file can't be used on a different computer or by a different user.
 
 ## Parameters
-- `-ClientId`: The Client ID of the Azure AD application used for authentication.
 - `-TenantId`: The Tenant ID of the Azure AD application.
-- `-ClientSecret`: The Client Secret of the Azure AD application used for authentication.
+- `-Path`: The file path to the secure credential file containing the client secret credentials.
 - `-UseInteractiveLogin`: Use this switch for interactive user login instead of client credentials.
 - `-LogPath`: The file path where logs should be written. Default is `IntuneDeviceSync.log` in the script's root directory.
 - `-OutputDirectory`: Directory where output files (JSON and CSV) will be saved. Default is the script's root directory.
@@ -55,7 +54,7 @@ This script connects to Microsoft Intune using the Microsoft Graph API to retrie
 
 ### Example 1: Using Service Principal Authentication
 ```powershell
-.\Export-IntuneManagedDevices.ps1 -ClientId "<YourClientId>" -TenantId "<YourTenantId>" -ClientSecret "<YourClientSecret>"
+.\Export-IntuneManagedDevices.ps1 -TenantId "<YourTenantId>" -Path "<PathToCredentialFile>"
 ```
 This command will use the specified Client ID, Tenant ID, and Client Secret to authenticate and retrieve device information, exporting it to JSON and CSV.
 
@@ -77,5 +76,4 @@ This command will prompt you to log in interactively using your user credentials
 
 ## Important Notes
 - Ensure that the Azure AD application has the appropriate API permissions (`DeviceManagementManagedDevices.Read.All`) and that admin consent is granted.
-- The `ClientSecret` must remain secure. Do not log or expose this value unnecessarily.
 - The script attempts to disconnect from any previous Microsoft Graph session before initiating a new connection to ensure proper session management.

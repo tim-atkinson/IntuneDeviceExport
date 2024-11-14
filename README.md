@@ -7,7 +7,7 @@ This script connects to Microsoft Intune using the Microsoft Graph API to retrie
 
 ## Features
 - Connects to Microsoft Intune via Microsoft Graph API.
-- Supports both **interactive user login** and **service principal** (client credentials) authentication.
+- Supports both **interactive user login** and **service principal** (client secure credentials) authentication.
 - Retrieves detailed information about managed devices in your Intune environment.
 - Exports device data to **JSON** and **CSV** formats for further processing and analysis.
 - Includes logging for transparency and troubleshooting.
@@ -33,6 +33,15 @@ This script connects to Microsoft Intune using the Microsoft Graph API to retrie
   Install-Module Microsoft.Graph -Scope CurrentUser
   ```
 - **Azure AD Application**: If using service principal authentication, ensure you have an Azure AD application with permissions to access Intune data (DeviceManagementManagedDevices.Read.All).
+
+- **Create the credential file, execute**:
+  ```powershell
+    $ClientSecretCredential = Get-Credential -Credential "<YourTenantId>"
+    Enter <YourSecretId>
+    $ClientSecretCredential | Export-Clixml -Path "<PathToCredentialFile>"
+  ```
+> [!WARNING]
+> The Export-Clixml cmdlet encrypts credential objects by using the Windows Data Protection API. The encryption ensures that only your user account on only that computer can decrypt the contents of the credential object. The exported CLIXML file can't be used on a different computer or by a different user.
 
 ## Parameters
 - `-ClientId`: The Client ID of the Azure AD application used for authentication.

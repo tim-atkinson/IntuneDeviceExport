@@ -51,6 +51,12 @@ param (
     [Parameter(ParameterSetName = 'Interactive', Mandatory = $true)]
     [switch]$UseInteractiveLogin,
 
+    [Parameter()]
+    [switch]$AVDDevices, 
+    
+    [Parameter()]
+    [string]$AVDUniqueIdentifier
+
     [string]$LogPath = "$PSScriptRoot\IntuneManagedDevices.log",
     [string]$OutputDirectory = $PSScriptRoot
 )
@@ -139,6 +145,26 @@ function Get-IntuneDevices {
         # Retrieve all managed devices from Microsoft Intune
         $Devices = Get-MgDeviceManagementManagedDevice -All
         Write-Log -Message "Retrieved $($Devices.Count) devices from Microsoft Intune."
+
+        # Apply AVD multi-session filter if requested
+        if ($AVDDevices) {
+            Write-Log -Message "Filtering for AVD multi/single session devices..."
+
+            if ($AVDUniqueIdentifier) {
+                Write-Log -Message "Using device name identifier '$AVDUniqueIdentifier' for filtering."
+                $Devices = $Devices | Where-Object {
+                    $_.deviceName -like "*$AVDUniqueIdentifier*"
+                }
+            }
+            else {
+                Write-Log -Message "Using default filter: model = 'Virtual Machine'"
+                $Devices = $Devices | Where-Object {
+                    $_.model -eq "Virtual Machine"
+                }
+            }
+            Write-Log -Message "Filtered device count: $($Devices.Count)"
+        }
+
         # Filter out any devices without a device name
         return $Devices
     }

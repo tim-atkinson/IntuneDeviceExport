@@ -11,6 +11,7 @@ This script connects to Microsoft Intune using the Microsoft Graph API to retrie
 - Retrieves detailed information about managed devices in your Intune environment.
 - Exports device data to **JSON** and **CSV** formats for further processing and analysis.
 - Includes logging for transparency and troubleshooting.
+- Optional AVD-specific filtering using `-AVDDevices` and `-AVDUniqueIdentifier` parameters.
 
 ## Requirements
 - **Microsoft Graph SDK Installation**: Install the Microsoft Graph SDK by using the following command:
@@ -49,6 +50,13 @@ This script connects to Microsoft Intune using the Microsoft Graph API to retrie
 - `-UseInteractiveLogin`: Use this switch for interactive user login instead of client credentials.
 - `-LogPath`: The file path where logs should be written. Default is `IntuneDeviceSync.log` in the script's root directory.
 - `-OutputDirectory`: Directory where output files (JSON and CSV) will be saved. Default is the script's root directory.
+- `-AVDDevices` : Enables filtering for Azure Virtual Desktop devices (both single‑session and multi‑session).
+  - When enabled, the script filters devices using one of the methods:
+    - **Default :** model="Virtual Machine"</br>
+      Captures all Azure-based VMs entolled in Intune. They are very likely to be AVD devices.
+    - **Override :** device name identifier</br>
+      If `-AVDUniqueIdentifier` is provided, the script filters devices whose names contain the specified string.
+ - `AVDUniqueIdentifier` : Optional string used to filter AVD devices by name pattern (e.g., `"AVD"`, `"POOL"`, `"SESSION"`).
 
 ## Usage
 
@@ -64,9 +72,21 @@ This command will use the specified Client ID, Tenant ID, and Client Secret to a
 ```
 This command will prompt you to log in interactively using your user credentials.
 
+### Example 3: Export Only AVD Devices (Default Model Filter)
+```powershell
+.\Export-IntuneManagedDevices.ps1 -UseInteractiveLogin -AVDDevices
+```
+
+### Example 4: Export Only AVD Devices Using Name Identifier
+```powershell
+.\Export-IntuneManagedDevices.ps1 -UseInteractiveLogin -AVDDevices -AVDUniqueIdentifier "AVD"
+```
+
 ## Script Details
 - **Logging**: The script logs all activities, including authentication attempts, data retrieval, and export status, in a log file (`IntuneDeviceSync.log`). This helps in auditing and troubleshooting issues.
-- **Data Filtering**: The script filters out devices that do not have a `deviceName` property set.
+- **Data Filtering**
+  - The script filters out devices that do not have a `deviceName` property set.
+  - When `-AVDDevices` is used, additional filtering is applied.
 - **Export**: The retrieved data is exported in two formats:
   - **JSON**: Contains device details such as `deviceName`, `id`, `model`, and `lastSyncDateTime`.
   - **CSV**: Contains similar information to the JSON output for easy viewing and processing.

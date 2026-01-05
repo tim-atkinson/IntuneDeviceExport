@@ -55,7 +55,7 @@ param (
     [switch]$AVDDevices, 
     
     [Parameter()]
-    [string]$AVDUniqueIdentifier
+    [string]$AVDUniqueIdentifier,
 
     [string]$LogPath = "$PSScriptRoot\IntuneManagedDevices.log",
     [string]$OutputDirectory = $PSScriptRoot
